@@ -1,0 +1,1812 @@
+---create or replace table PRD_GA4_DX_REPORTING.GA_agg_db_dx_all_dashboards_data_validation as 
+delete from DEV_GA4_DX_REPORTING.GA_agg_db_dx_all_dashboards_data_validation where grain in ('Monthly','Quarterly','Annually') 
+and data_type='Live Data';
+--delete from PRD_GA4_DX_REPORTING.GA_agg_db_dx_all_dashboards_data_validation where grain ='Month' and data_type='Live Data';
+insert into DEV_GA4_DX_REPORTING.GA_agg_db_dx_all_dashboards_data_validation 
+select AX.* ,BX.benchmark_value from  (
+Select A.load_date,
+       A.grain,
+                   A.table_name,
+                   'Live Data' as data_type,
+                   market,
+                   B.dashboard_name,
+                   B.min_date,
+                   B.max_date,
+                   A.dxpr_process_date,
+                   row_number() over (partition by B.dashboard_name,A.table_name order by A.dxpr_process_date desc) as rank_date,
+                   B.grain_intervals,
+                   A.sessions,
+                   A.eng_sessions,
+                   A.enq_sessions,
+                   A.previous_day_sessions,
+                   A.previous_day_eng_sessions,
+                   A.previous_day_enq_sessions,
+                   A.variation_sessions,
+                   A.variation_eng_sessions,
+                   A.variation_enq_sessions, 
+                                 A.config_start,
+                                                A.previous_day_config_start,
+                                                A.variation_config_start,
+                                                A.config_complete,
+                                                A.previous_day_config_complete,
+                                                A.variation_config_complete,
+                                                A.config_cost,
+                                                A.previous_day_config_cost,
+                                                A.variation_config_cost,
+                                                A.form_open,
+                                                A.previous_day_form_open,
+                                                A.variation_form_open,
+                                                A.visitor,
+                                                A.previous_day_visitor,
+                                                A.variation_visitor,
+                                                A.eng_visitor,
+                                                A.previous_day_eng_visitor,
+                                                A.variation_eng_visitor,
+                                                A.enq_visitor,
+                                                A.previous_day_enq_visitor,
+                                                A.variation_enq_visitor,
+                                                A.fs_visitor,
+                                                A.previous_day_fs_visitor,
+                                                A.variation_fs_visitor
+
+                                
+                                 
+                                 from
+
+
+
+(
+
+--Table: PRD_GA4_DX_REPORTING.GA_agg_db_dx_userjourney_total_level_final_SS_Camp
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor
+
+from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_userjourney_total_level_final_SS_Camp' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+sum(total_engg_sessions) as eng_sessions,
+sum(total_enq_sessions) as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_userjourney_total_level_final_SS_Camp where load_date is not null and  grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+--Table: PRD_GA4_DX_REPORTING.GA_agg_db_dx_userjourney_page_level_final_SS_Camp
+
+UNION ALL 
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor
+
+from (
+select current_date as load_date,
+grain__GA_agg_db_dx_userjourney_page_level_final_ as grain,
+'GA_agg_db_dx_userjourney_page_level_final_SS_Camp' as table_name,
+date__GA_agg_db_dx_userjourney_page_level_final_ as dxpr_process_date,
+market_name__GA_agg_db_dx_userjourney_page_level_final_ as market,
+---sum(page_sessions) as sessions,
+---sum(page_engg_sessions) as eng_sessions,
+---sum(page_enquiry_sessions) as enq_sessions,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_userjourney_page_level_final_SS_Camp where load_date is not null and grain__GA_agg_db_dx_userjourney_page_level_final_ ='Monthly' and date__GA_agg_db_dx_userjourney_page_level_final_ >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+--Table: GA_agg_db_dx_Config_deepdive_rpt_all_hist
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor
+from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_Config_deepdive_cost_rpt_all_hist' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(case when interaction_id='1000' then total_sessions end ) as sessions,
+sum(case when interaction_id='1000' then engg_sessions end) as eng_sessions,
+sum(case when interaction_id='1000' then enquiry_sessions end) as enq_sessions ,
+sum(case when interaction_id='5' and nameplate_code='All' and model_year='All' then total_sessions end) as config_start,
+sum(case when interaction_id='11' and nameplate_code='All' and model_year='All' then total_sessions end) as config_complete,
+Round(sum(Configuration_Base_Cost * Pound_Streling_Multiplier) / nullif(sum(nrows_cbc),0),2) as config_cost,
+0 as form_open,
+sum(case when interaction_id='1000' then total_visitors end) as visitor,
+sum(case when interaction_id='1000' then engg_visitors end) as eng_visitor,
+sum(case when interaction_id='1000' then  enquiry_visitors end) as enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_Config_deepdive_cost_rpt_all_hist where model_year='All' and nameplate_code='All' and
+--where  load_date is not null and interaction_id='1000' and model_year='All' and nameplate_code='All' and
+
+grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+--Table: GA_agg_db_dx_funnel_dashboard_all_hist
+
+UNION ALL 
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+"Monthly" as grain,
+'GA_agg_db_dx_funnel_dashboard_all_hist' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enquiry_sessions) as enq_sessions,
+sum(config_start_sessions) as config_start,
+sum(config_complete_sessions) as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 enq_visitor,
+0 as fs_visitor
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_funnel_dashboard_all_hist where Nameplate_code='All' 
+and house_of_brands='All' 
+and channel_grouping<>'Direct-BConnect'  and
+grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+--Table: GA_agg_db_dx_deepdive_dashboard_rpt_all_hist
+
+UNION ALL 
+
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+"Monthly" as grain,
+'GA_agg_db_dx_deepdive_dashboard_rpt_all_hist' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(case when interaction_Id ='All' then total_sessions end) as sessions,
+sum(case when interaction_Id ='All' then engg_sessions end) as eng_sessions,
+sum(case when interaction_Id ='All' then enquiry_sessions end) as enq_sessions,
+sum(case when interaction_Id ='5' then total_sessions end) as config_start,
+sum(case when interaction_Id ='11' then total_sessions end) as config_complete,
+0 as config_cost,
+0 as form_open,
+sum(case when interaction_Id ='All' then total_visitors end) as visitor,
+sum(case when interaction_Id ='All' then engg_visitors end) as eng_visitor,
+sum(case when interaction_Id ='All' then enquiry_visitors end) as enq_visitor,
+0 as fs_visitor
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_deepdive_dashboard_rpt_all_hist 
+where Nameplate_code='All' and house_of_brands='All' 
+and channel_grouping<>'Direct-BConnect'   and
+grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+--Table: GA_agg_db_dx_pm_and_config_common_metrics
+
+UNION ALL 
+
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+coalesce(lag (sessions) over (order by market, dxpr_process_date),0) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_pm_and_config_common_metrics' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enquiry_sessions) as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+sum(visitors) as visitor,
+sum(engg_visitors) as eng_visitor,
+sum(enquiry_visitors) as enq_visitor,
+0 as fs_visitor
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_pm_and_config_common_metrics
+where house_of_brands='All' and  Nameplate_code='All'  and
+grain ='Monthly' and date >= current_date -365 and channel_grouping<>'Direct-BConnect'  group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+--Table: GA_agg_db_dx_exec_dashboard_final
+
+UNION ALL 
+
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_exec_dashboard_final' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enquiry_sessions) as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+sum(total_visitors) as visitor,
+sum(engg_visitors) as eng_visitor,
+sum(enquiry_visitors) as enq_visitor,
+0 as fs_visitor
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_exec_dashboard_final 
+where house_of_brands='All' and  Nameplate_code='All' and grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+---Engagement and Enquiry Not Applicable 
+
+
+--Table: GA_agg_db_dx_geo_dx_dashboard_all_hist
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from  (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_geo_dx_dashboard_all_hist' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_geo_dx_dashboard_all_hist where load_date is not null and Nameplate_code='All' and grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+--Table: GA_agg_db_dx_geo_dashboard_all_hist
+
+UNION ALL 
+
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from  (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_geo_dashboard_all_hist' as table_name,
+date as dxpr_process_date,
+market_name as market,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_geo_dashboard_all_hist where Nameplate_code='All' and  grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+--Table: GA_agg_db_dx_PR_Config_rpt_all_hist
+
+-- UNION ALL 
+
+
+-- select *,
+-- round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+-- round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+-- round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+-- round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+-- round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+-- round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+-- round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+-- round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+-- round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+-- round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+-- round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+-- from (
+-- select load_date,
+-- grain,
+-- table_name,
+-- dxpr_process_date,
+-- market,
+-- sessions,
+-- eng_sessions,
+-- enq_sessions,
+-- config_start,
+-- config_complete,
+-- config_cost,
+-- form_open,
+-- visitor,
+-- eng_visitor,
+-- enq_visitor,
+-- fs_visitor,
+-- lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+-- lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+-- lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+-- lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+-- lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+-- lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+-- lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+-- lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+-- lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+-- lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+-- lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+-- select current_date as load_date,
+-- grain__PR_GA_configurator_ as grain,
+-- 'GA_agg_db_dx_PR_Config_rpt_all_hist' as table_name,
+-- visit_start_date as dxpr_process_date,
+-- market_name__PR_GA_configurator_ as market,
+-- 0 as sessions,
+-- 0 as eng_sessions,
+-- 0 as enq_sessions,
+-- sum(case when interaction_id__PR_GA_configurator_ =5 then sessions end) as config_start,
+-- sum(case when interaction_id__PR_GA_configurator_ =11 then sessions end)  as config_complete,
+-- Round(sum(Configuration_Base_Cost * Pound_Streling_Multiplier) / nullif(sum(nrows_cbc),0),2) as config_cost,
+-- 0 as form_open,
+-- 0 as visitor,
+-- 0 as eng_visitor,
+-- 0 enq_visitor,
+-- 0 as fs_visitor
+-- from PRD_GA4_DX_REPORTING.GA_agg_db_dx_PR_Config_rpt_all_hist where nameplate_code__PR_GA_configurator_ ='All' and
+-- grain__PR_GA_configurator_ ='Monthly' and model_year__PR_GA_configurator_ ='All' and visit_start_date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+--Table: GA_agg_db_dx_config_v2
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+option_grain as grain,
+'GA_agg_db_dx_config_v2' as table_name,
+option_date as dxpr_process_date,
+option_market_name as market,
+--sum(option_total_sessions) as sessions,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions ,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_config_v2 where load_date is not null and option_nameplate_code='All' and option_interaction_id="1000" and  option_grain ='Monthly' and option_model_year='All' and option_date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+--Table: FormA_Table_FINAL
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from  (
+select current_date as load_date,
+grain as grain,
+'FormA_Table_FINAL' as table_name,
+date as dxpr_process_date,
+market_name as market,
+--sum(form_start_sessions) as sessions,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+sum(form_open_sessions) as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.FormA_Table_FINAL where load_date is not null and Nameplate_code='All' and grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+--Table: GA_dx_finserv_dxa_overall_data_v1
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_dx_finserv_dxa_overall_data_v1' as table_name,
+date as dxpr_process_date,
+Market_Name as market,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+sum(DX_Visitors) as visitor,
+sum(DX_Engg_Visitors) as eng_visitor,
+sum(DX_Enq_Visitors) as enq_visitor,
+sum(FS_Visitors) as fs_visitor,
+
+from PRD_GA4_DX_REPORTING.GA_dx_finserv_dxa_overall_data_v1 where Finance_Product ='Not Applicable' and load_date is not null and Nameplate='All' and  grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+--Table: GA_dx_finserv_dxa_offers_finance_data
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from  (
+select current_date as load_date,
+grain as grain,
+'GA_dx_finserv_dxa_offers_finance_data' as table_name,
+date as dxpr_process_date,
+Market_Name as market,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+---sum(ONF_Visitors) as visitor,
+---sum(QQ_Visitors) as eng_visitor,
+---sum(IQ_Visitors) as enq_visitor,
+---sum(FBB_Visitors) as fs_visitor,
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor,
+from PRD_GA4_DX_REPORTING.GA_dx_finserv_dxa_offers_finance_data where Nameplate ='All' and grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+--Table: GA_dx_finserv_dxa_offers_finance_granular_data
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from  (
+select current_date as load_date,
+grain as grain,
+'GA_dx_finserv_dxa_offers_finance_granular_data' as table_name,
+date as dxpr_process_date,
+Market_Name as market,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+---sum(ONF_Visitors_Business_Offer) as visitor,
+---sum(QQ_Visitors_Total_Calculations) as eng_visitor,
+---sum(IQ_Visitors_Total_Calculations) as enq_visitor,
+---sum(FBB_Visitors_Select) as fs_visitor
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_dx_finserv_dxa_offers_finance_granular_data where load_date is not null and Nameplate= "All" and   grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+--Table: GA_agg_db_dx_exec_dashboard_final_paidsearch
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_exec_dashboard_final_paidsearch' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enquiry_sessions) as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+sum(total_visitors) as visitor,
+sum(engg_visitors) as eng_visitor,
+sum(enquiry_visitors) as enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_exec_dashboard_final_paidsearch where house_of_brands ='All' and   nameplate_code='All' and grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+--Table: Performance Marketing
+
+union all 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_perf_marketing_sales_funnel_final_table' as table_name,
+date as dxpr_process_date,
+market,
+sum(total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enquiry_sessions) as enq_sessions,
+sum(config_start_sessions) as config_start,
+sum(config_complete_sessions) as config_complete,
+round(sum(Configuration_Base_Cost * Pound_Streling_Multiplier) / nullif(sum(nrows_cbc),0),2) as config_cost,
+0 as form_open,
+sum(total_visitors) as visitor,
+sum(engaged_visitors) as eng_visitor,
+sum(enquiry_visitors) as enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_db_perf_marketing_sales_funnel_final_table 
+where house_of_brands ='All' and nameplate_code='All' and traffic_source <>'Direct-BConnect' and data_source='DX'
+and grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+--Table: GA_dx_ecomm_application_metrics_final
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+coalesce(lag (sessions) over (order by market, dxpr_process_date),0) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_dx_ecomm_application_metrics_final' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(overall_sessions) as sessions,
+sum(ecommerce_sessions) as eng_sessions,
+0 as enq_sessions,
+sum(config_start_sessions) as config_start,
+sum(config_complete_sessions) as config_complete,
+Round(sum(Configuration_Base_Cost)/ nullif(sum(nrows_cbc),0),2) as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor,
+
+from PRD_GA4_DX_REPORTING.GA_dx_ecomm_application_metrics_final where load_date is not null and nameplate_code='All' and  grain ='Monthly' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+----Market Analyst Dashboard
+
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+"Monthly" as grain,
+'GA_agg_db_dx_deepdive_dashboard_industrialisation' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enquiry_sessions) as enq_sessions,
+sum(config_starts) as config_start,
+sum(config_completes) as config_complete,
+0 as config_cost,
+0 as form_open,
+sum(total_visitors) as visitor,
+sum(engg_visitors) as eng_visitor,
+sum(enquiry_visitors) as enq_visitor,
+0 as fs_visitor,
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_deepdive_dashboard_industrialisation 
+where nameplate_code='All' and house_of_brands='All' and  grain ='Month' 
+and channel_grouping<>'Direct-BConnect'
+and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+"Monthly" as grain,
+'GA_agg_db_dx_enquiries_industrialisation' as table_name,
+date as dxpr_process_date,
+market_name as market,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor,
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_enquiries_industrialisation where nameplate_code='All' and house_of_brands='All' and  grain ='Month' and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+"Monthly" as grain,
+'GA_agg_db_dx_funnel_dashboard_industrialisation' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(Total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enquiry_sessions) as enq_sessions,
+sum(config_start_sessions) as config_start,
+sum(config_complete_sessions) as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor,
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_funnel_dashboard_industrialisation 
+where nameplate_code='All' and house_of_brands='All' and  grain ='Month' 
+and channel_grouping<>'Direct-BConnect'
+and date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+------CRM Email Performance Dashboard
+
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_crm_campaign_data_with_monthly_comparators' as table_name,
+month_start_date as dxpr_process_date,
+Market as market,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor,
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_crm_campaign_data_with_monthly_comparators where nameplate_code='All' and  campaign_name='All' and campaign_type='All' and grain ='Monthly' and month_start_date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+
+UNION ALL 
+
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+lag (sessions) over (order by market, dxpr_process_date) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+grain as grain,
+'GA_agg_db_dx_crm_and_visitors_engg_enq_forms_v1' as table_name,
+month_start_date as dxpr_process_date,
+Market as market,
+0 as sessions,
+0 as eng_sessions,
+0 as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor,
+
+from PRD_GA4_DX_REPORTING.GA_agg_db_dx_crm_and_visitors_engg_enq_forms_v1 where nameplate_code='All' and  campaign_name='All' and campaign_type='All' and grain ='Monthly' and month_start_date >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+union all
+
+select *,
+round(abs(sessions-previous_day_sessions)/Nullif(previous_day_sessions,0),2) as variation_sessions,
+round(abs(eng_sessions-previous_day_eng_sessions)/Nullif(previous_day_eng_sessions,0),2) as variation_eng_sessions,
+round(abs(enq_sessions-previous_day_enq_sessions)/Nullif(previous_day_enq_sessions,0),2) as variation_enq_sessions,
+round(abs(config_start-previous_day_config_start)/Nullif(previous_day_config_start,0),2) as variation_config_start,
+round(abs(config_complete-previous_day_config_complete)/Nullif(previous_day_config_complete,0),2) as variation_config_complete,
+round(abs(config_cost-previous_day_config_cost)/Nullif(previous_day_config_cost,0),2) as variation_config_cost,
+round(abs(form_open-previous_day_form_open)/Nullif(previous_day_form_open,0),2) as variation_form_open,
+round(abs(visitor-previous_day_visitor)/Nullif(previous_day_visitor,0),2) as variation_visitor,
+round(abs(eng_visitor-previous_day_eng_visitor)/Nullif(previous_day_eng_visitor,0),2) as variation_eng_visitor,
+round(abs(enq_visitor-previous_day_enq_visitor)/Nullif(previous_day_enq_visitor,0),2) as variation_enq_visitor,
+round(abs(enq_visitor-previous_day_fs_visitor)/Nullif(previous_day_fs_visitor,0),2) as variation_fs_visitor,
+from (
+select load_date,
+grain,
+table_name,
+dxpr_process_date,
+market,
+sessions,
+eng_sessions,
+enq_sessions,
+config_start,
+config_complete,
+config_cost,
+form_open,
+visitor,
+eng_visitor,
+enq_visitor,
+fs_visitor,
+coalesce(lag (sessions) over (order by market, dxpr_process_date),0) as previous_day_sessions,
+lag (eng_sessions) over (order by market, dxpr_process_date) as previous_day_eng_sessions,
+lag (enq_sessions) over (order by market, dxpr_process_date) as previous_day_enq_sessions,
+lag (config_start) over (order by market, dxpr_process_date) as previous_day_config_start,
+lag (config_complete) over (order by market, dxpr_process_date) as previous_day_config_complete,
+lag (config_cost) over (order by market, dxpr_process_date) as previous_day_config_cost,
+lag (form_open) over (order by market, dxpr_process_date) as previous_day_form_open,
+lag (visitor) over (order by market, dxpr_process_date) as previous_day_visitor,
+lag (eng_visitor) over (order by market, dxpr_process_date) as previous_day_eng_visitor,
+lag (enq_visitor) over (order by market, dxpr_process_date) as previous_day_enq_visitor,
+lag (fs_visitor) over (order by market, dxpr_process_date) as previous_day_fs_visitor from (
+select current_date as load_date,
+'Monthly' as grain,
+'GA_agg_dx_variance_dashboard_scaleup_v1' as table_name,
+date as dxpr_process_date,
+market_name as market,
+sum(total_sessions) as sessions,
+sum(engg_sessions) as eng_sessions,
+sum(enq_sessions) as enq_sessions,
+0 as config_start,
+0 as config_complete,
+0 as config_cost,
+0 as form_open,
+0 as visitor,
+0 as eng_visitor,
+0 as enq_visitor,
+0 as fs_visitor
+from PRD_GA4_DX_REPORTING.GA_agg_dx_variance_dashboard_scaleup_v1 where grain='Monthly'  and nameplate_code='All' and load_date is not null and house_of_brands ='All' and  date  >= current_date -365 group by 1,2,3,4,5 order by 1,2,3,4,5) order by 1 ,2,3,4,5) where previous_day_sessions is not NULL
+
+
+) A
+
+INNER JOIN
+
+(select * from 
+
+( --REMOVED MARKET TOP 20 
+  /* select 'Market Top 20 Cities Dashboard' as dashboard_name, 'GA_agg_db_dx_geo_dx_dashboard_all_hist' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date ) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_geo_dx_dashboard_all_hist where load_date is not null and grain='Monthly' and nameplate_code ='All' group by 1,2
+UNION ALL
+select 'Market Top 20 Cities Dashboard' as dashboard_name, 'GA_agg_db_dx_geo_dashboard_all_hist' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_geo_dashboard_all_hist where load_date is not null and grain='Monthly' and nameplate_code='All' group by 1,2
+UNION ALL */
+select 'Configurator Dashboard' as dashboard_name, 'GA_agg_db_dx_Config_deepdive_cost_rpt_all_hist' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_Config_deepdive_cost_rpt_all_hist where load_date is not null and nameplate_code='All' and interaction_id="1000" and model_year='All' and  grain='Monthly' and  nameplate_code='All' group by 1,2
+UNION ALL --funnel dashboard
+select 'DX Performance Insights Dashboard' as dashboard_name, 'GA_agg_db_dx_funnel_dashboard_all_hist' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_funnel_dashboard_all_hist where load_date is not null and nameplate_code='All'and house_of_brands='All'  and  grain='Monthly' group by 1,2
+UNION ALL--deep dive dashboard
+select 'DX Performance Insights Dashboard' as dashboard_name, 'GA_agg_db_dx_deepdive_dashboard_rpt_all_hist' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_deepdive_dashboard_rpt_all_hist where  load_date is not null and nameplate_code='All' and house_of_brands='All' and grain='Monthly' group  by 1,2
+UNION ALL --deep dive dashboard
+select 'DX Performance Insights Dashboard' as dashboard_name, 'GA_agg_db_dx_pm_and_config_common_metrics' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_pm_and_config_common_metrics where  load_date is not null and nameplate_code='All' and house_of_brands ='All' and grain='Monthly' group  by 1,2
+-- UNION ALL
+-- select 'Configurator Dashboard' as dashboard_name, 'GA_agg_db_dx_PR_Config_rpt_all_hist' as table_name, min(visit_start_date) as min_date, max(visit_start_date) as max_date, count(distinct visit_start_date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_PR_Config_rpt_all_hist where load_date is not null and nameplate_code__PR_GA_configurator_='All' and  grain__PR_GA_configurator_='Monthly' group by 1,2
+UNION ALL
+select 'Configurator Dashboard' as dashboard_name, 'GA_agg_db_dx_config_v2' as table_name, min(option_date) as min_date, max(option_date) as max_date, count(distinct option_date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_config_v2 where load_date is not null and option_nameplate_code='All' and option_grain='Monthly' group by 1,2
+UNION ALL
+select 'Page Performance Dashboard' as dashboard_name, 'GA_agg_db_dx_userjourney_page_level_final_SS_Camp' as table_name, min(date__GA_agg_db_dx_userjourney_page_level_final_) as min_date, max(date__GA_agg_db_dx_userjourney_page_level_final_) as max_date, count(distinct date__GA_agg_db_dx_userjourney_page_level_final_) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_userjourney_page_level_final_SS_Camp where load_date is not null and  grain__GA_agg_db_dx_userjourney_page_level_final_='Monthly' group by 1,2
+UNION ALL
+select 'Page Performance Dashboard' as dashboard_name, 'GA_agg_db_dx_userjourney_total_level_final_SS_Camp' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_userjourney_total_level_final_SS_Camp where load_date is not null and   grain='Monthly' group by 1,2
+UNION ALL
+select 'Form Analysis Dashboard' as dashboard_name, 'FormA_Table_FINAL' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.FormA_Table_FINAL where load_date is not null and nameplate_code='All' and  grain='Monthly' group by 1,2
+UNION ALL
+select 'DX Financial Services Dashboard' as dashboard_name, 'GA_dx_finserv_dxa_overall_data_v1' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_dx_finserv_dxa_overall_data_v1 where load_date is not null and grain='Monthly' and Nameplate ='All' group by 1,2
+UNION ALL
+select 'DX Financial Services Dashboard' as dashboard_name, 'GA_dx_finserv_dxa_offers_finance_data' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_dx_finserv_dxa_offers_finance_data where load_date is not null and grain='Monthly' and nameplate='All'  group by 1,2
+UNION ALL
+select 'DX Financial Services Dashboard' as dashboard_name, 'GA_dx_finserv_dxa_offers_finance_granular_data' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_dx_finserv_dxa_offers_finance_granular_data where load_date is not null and grain='Monthly' and nameplate='All'  group by 1,2
+UNION ALL
+select 'DX Executive Summary Dashboard' as dashboard_name, 'GA_agg_db_dx_exec_dashboard_final' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_exec_dashboard_final where  grain='Monthly' and nameplate_code='All' and house_of_brands ='All'  group by 1,2
+UNION ALL
+select 'DX Executive Summary Dashboard' as dashboard_name, 'GA_agg_db_dx_exec_dashboard_final_paidsearch' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_exec_dashboard_final_paidsearch where  grain='Monthly' and nameplate_code='All'  and house_of_brands ='All' group by 1,2
+UNION ALL
+select 'E-Commerce Dashboard' as dashboard_name, 'GA_dx_ecomm_application_metrics_final' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_dx_ecomm_application_metrics_final where load_date is not null and grain='Monthly' and nameplate_code='All'  group by 1,2
+
+UNION ALL 
+select 'CRM Email Performance Dashboard' as dashboard_name, 'GA_agg_db_dx_crm_campaign_data_with_monthly_comparators' as table_name, min(month_start_date) as min_date, max(month_start_date) as max_date, count(distinct month_start_date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_crm_campaign_data_with_monthly_comparators where  grain='Monthly' and nameplate_code='All'  and campaign_name='All' and campaign_type='All' group by 1,2
+
+UNION ALL
+select 'Performance Marketing Funnel Dashboard' as dashboard_name, 'GA_agg_db_perf_marketing_sales_funnel_final_table' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_perf_marketing_sales_funnel_final_table where  grain='Monthly' and nameplate_code='All' and house_of_brands ='All' group by 1,2
+
+UNION ALL 
+select 'Market DX Analysis Dashboard' as dashboard_name, 'GA_agg_db_dx_deepdive_dashboard_industrialisation' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_deepdive_dashboard_industrialisation where  grain='Month' and nameplate_code='All' and house_of_brands='All'  group by 1,2
+
+UNION ALL 
+
+select 'Market DX Analysis Dashboard' as dashboard_name, 'GA_agg_db_dx_enquiries_industrialisation' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_enquiries_industrialisation where  grain='Month' and nameplate_code='All' and house_of_brands='All'  group by 1,2
+
+UNION ALL 
+
+select 'Market DX Analysis Dashboard' as dashboard_name, 'GA_agg_db_dx_funnel_dashboard_industrialisation' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_dx_funnel_dashboard_industrialisation where  grain='Month' and nameplate_code='All' and house_of_brands='All'  group by 1,2
+
+UNION ALL
+select 'KPI Variance Analysis Dashboard' as dashboard_name, 'GA_agg_dx_variance_dashboard_scaleup_v1' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_dx_variance_dashboard_scaleup_v1 where load_date is not null and grain='Monthly' and nameplate_code='All' and house_of_brands ='All' group by 1,2
+
+UNION ALL
+
+select  --'Monthly' AS grain,
+ 'Competitor Media Spend Analysis Dashboard ' as dashboard_name, 'GA_agg_db_nielsen_auto_data' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_nielsen_auto_data where date is not null   group by 1,2
+
+
+UNION ALL
+select --'Monthly' AS grain, 
+'Competitor Media Spend Analysis Dashboard ' as dashboard_name, 'GA_agg_db_nielsen_luxury_data' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_nielsen_luxury_data where date is not null   group by 1,2
+
+UNION ALL
+select  --'Monthly' AS grain, 
+'Competitor Media Spend Analysis Dashboard ' as dashboard_name, 'nielsen_auto_luxury_combined_data' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.nielsen_auto_luxury_combined_data where date is not null   group by 1,2
+
+
+
+UNION ALL --6/5/25
+
+select  --'Monthly' AS grain, 
+'Your Account Dashboard ' as dashboard_name, 'GA4_dx_myaccount_final' as table_name, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA4_dx_myaccount_final where grain = 'Monthly' and date is not null   group by 1,2
+
+
+
+)) B
+
+
+on A.table_name=B.table_name) as AX 
+left join jlr-dl-dxa.PRD_GA4_DX_REPORTING.GA4_lookup_dashboard_grain_benchmark BX 
+on AX.dashboard_name = BX.dashboard_name 
+and AX.table_name = BX.table_name 
+and AX.grain =BX.Grain 
+
+UNION ALL
+(
+WITH CTE_GMP as
+(
+
+-- select 'Global Marketing Permission Dashboard' as dashboard_name, 'GMP_pivotvolume_by_month' as table_name,'Monthly' as Grain, min(period) as min_date, max(period) as max_date, count(distinct period) as grain_intervals from `jlr-dl-vara.PRD_MARKETING_PERMISSIONS_REPORTING`.`GMP_pivotvolume_by_month` group by 1,2
+-- UNION ALL
+-- select 'Global Marketing Permission Dashboard' as dashboard_name, 'GMP_FINAL_TABLE' as table_name,'Monthly' as Grain, min(period) as min_date, max(period) as max_date, count(distinct period) as grain_intervals from `jlr-dl-vara.PRD_MARKETING_PERMISSIONS_REPORTING`.`GMP_FINAL_TABLE` where grain='Monthly' group  by 1,2
+-- UNION ALL
+-- select 'Online Identification & Intelligent Lead' as dashboard_name, 'PIPE_T_SANKEY_test' as table_name,'Monthly' as Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from jlr-dl-dxa.ANALYST_SANDPIT_EU.PIPE_T_SANKEY_test group  by 1,2
+-- UNION ALL
+-- select 'Global Vehicle Retention dashboard' as dashboard_name, 'CRM_Retention_UK_US_with_HOB_Incorporation' as table_name,'Monthly' as Grain, min(Disposal_date) as min_date, max(Disposal_date) as max_date, count(distinct Disposal_date) as grain_intervals from jlr-dl-vara.Production_Global_Retention_Reporting.CRM_Retention_UK_US_with_HOB_Incorporation where grain='Monthly' group  by 1,2
+
+-- UNION ALL
+select 'MCI Exchange Rate Dashboard'  as dashboard_name, 'GA_agg_db_omg_exchange_rate' as table_name,Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from jlr-dl-dxa.PRD_GA4_DX_REPORTING.GA_agg_db_omg_exchange_rate where grain='Monthly' group  by 1,2,3
+UNION ALL
+select 'MCI Exchange Rate Dashboard'  as dashboard_name, 'GA_agg_db_omg_exchange_rate' as table_name,Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from jlr-dl-dxa.PRD_GA4_DX_REPORTING.GA_agg_db_omg_exchange_rate where grain='Quarterly' group  by 1,2,3
+UNION ALL
+select 'MCI Exchange Rate Dashboard'  as dashboard_name, 'GA_agg_db_omg_exchange_rate' as table_name,Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from jlr-dl-dxa.PRD_GA4_DX_REPORTING.GA_agg_db_omg_exchange_rate where grain='Annually' group  by 1,2,3
+
+UNION ALL --6/4/25
+select  'Competitor Media Spend Analysis Dashboard'  as dashboard_name, 'GA_agg_db_nielsen_auto_data' as table_name,'Monthly' as Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_nielsen_auto_data  group  by 1,2,3
+
+UNION ALL --6/4/25
+select 'Competitor Media Spend Analysis Dashboard'  as dashboard_name, 'GA_agg_db_nielsen_luxury_data' as table_name,'Monthly' as Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA_agg_db_nielsen_luxury_data  group  by 1,2,3
+
+
+UNION ALL --6/4/25
+select 'Competitor Media Spend Analysis Dashboard'  as dashboard_name, 'nielsen_auto_luxury_combined_data' as table_name,'Monthly' as Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.nielsen_auto_luxury_combined_data group  by 1,2,3
+
+UNION ALL --6/5/25
+
+select 'Your Account Dashboard'  as dashboard_name, 'GA4_dx_myaccount_final' as table_name,'Monthly' as Grain, min(date) as min_date, max(date) as max_date, count(distinct date) as grain_intervals from PRD_GA4_DX_REPORTING.GA4_dx_myaccount_final group  by 1,2,3
+
+
+)
+select current_date AS load_date,AX.Grain,AX.table_name,'Live Data' as data_type,CAST(NULL AS STRING) market,COALESCE(BX.dashboard_name,AX.dashboard_name) dasbhoard_name, min_date,max_date,max_date AS dxpr_process_date,1,
+grain_intervals,
+NULL AS sessions,
+NULL AS eng_sessions,
+NULL AS enq_sessions,
+NULL AS previous_day_sessions,
+NULL AS previous_day_eng_sessions,
+NULL AS previous_day_enq_sessions,
+NULL AS variation_sessions,
+NULL AS variation_eng_sessions,
+NULL AS variation_enq_sessions,
+NULL AS config_start,
+NULL AS previous_day_config_start,
+NULL AS variation_config_start,
+NULL AS config_complete,
+NULL AS previous_day_config_complete,
+NULL AS variation_config_complete,
+NULL AS config_cost,
+NULL AS previous_day_config_cost,
+NULL AS variation_config_cost,
+NULL AS form_open,
+NULL AS previous_day_form_open,
+NULL AS variation_form_open,
+NULL AS visitor,
+NULL AS previous_day_visitor,
+NULL AS variation_visitor,
+NULL AS eng_visitor,
+NULL AS previous_day_eng_visitor,
+NULL AS variation_eng_visitor,
+NULL AS enq_visitor,
+NULL AS previous_day_enq_visitor,
+NULL AS variation_enq_visitor,
+NULL AS fs_visitor,
+NULL AS previous_day_fs_visitor,
+NULL AS variation_fs_visitor,
+CASE WHEN AX.dashboard_name IN ('Global Vehicle Retention dashboard','MCI Exchange Rate Dashboard') THEN grain_intervals ELSE  BX.benchmark_value END as benchmark_value
+FROM CTE_GMP AX left join jlr-dl-dxa.PRD_GA4_DX_REPORTING.GA4_lookup_dashboard_grain_benchmark BX 
+on AX.dashboard_name = BX.dashboard_name 
+and AX.table_name = BX.table_name
+)
